@@ -1,7 +1,7 @@
 use crate::ring::*;
 use rug::{Complete, Integer};
 use sha3::{
-    digest::{ExtendableOutput, Reset, Update, XofReader},
+    digest::{ExtendableOutput, Update, XofReader},
     Shake128, Shake128Reader,
 };
 
@@ -37,7 +37,6 @@ impl Oracle {
     /// Finalizes the random oracle.
     pub fn finalize(&mut self) {
         self.xof = self.hasher.clone().finalize_xof();
-        self.hasher.reset();
     }
 
     /// Reads a byte vector.

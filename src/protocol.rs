@@ -234,14 +234,6 @@ impl<'a> Prover<'a> {
                 .uniform_sampler
                 .sample_range_bigint(&self.params.bfv.q);
         }
-
-        let mut g = self.ringp.new_poly();
-        for i in 0..self.params.bfv.n {
-            g.coeffs[i] = self
-                .encoder
-                .uniform_sampler
-                .sample_range_bigint(&self.params.bfv.q);
-        }
         let mu = g.coeffs[0].clone();
         for i in 0..2 * self.params.bfv.n {
             let c = self
