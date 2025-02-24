@@ -66,9 +66,30 @@ impl BigRing {
         }
     }
 
+    /// Applies NTT and returns the result.
+    pub fn ntt(&self, poly: &BigPoly) -> BigPoly {
+        if poly.is_ntt {
+            panic!("Polynomial is already in NTT form.");
+        }
+
+        let mut pout = BigPoly::new(self.embedding_degree, true);
+        self.ntt_assign(poly, &mut pout);
+        return pout;
+    }
+
+    /// Applies NTT and assigns the result to pout.
+    pub fn ntt_assign(&self, poly: &BigPoly, pout: &mut BigPoly) {
+        if poly.is_ntt {
+            panic!("Polynomial is already in NTT form.");
+        }
+
+        pout.coeffs.clone_from(&poly.coeffs);
+        self.transformer.ntt(&mut pout.coeffs);
+        pout.is_ntt = true;
+    }
+
     /// Applies NTT to the given polynomial.
-    /// Does nothing if the polynomial is already in NTT form.
-    pub fn ntt(&self, poly: &mut BigPoly) {
+    pub fn ntt_inplace(&self, poly: &mut BigPoly) {
         if poly.is_ntt {
             panic!("Polynomial is already in NTT form.");
         }
@@ -77,9 +98,30 @@ impl BigRing {
         poly.is_ntt = true;
     }
 
+    /// Applies Inverse NTT and returns the result.
+    pub fn intt(&self, poly: &BigPoly) -> BigPoly {
+        if !poly.is_ntt {
+            panic!("Polynomial is not in NTT form.");
+        }
+
+        let mut pout = BigPoly::new(self.embedding_degree, false);
+        self.intt_assign(poly, &mut pout);
+        return pout;
+    }
+
+    /// Applies Inverse NTT and assigns the result to pout.
+    pub fn intt_assign(&self, poly: &BigPoly, pout: &mut BigPoly) {
+        if !poly.is_ntt {
+            panic!("Polynomial is not in NTT form.");
+        }
+
+        pout.coeffs.clone_from(&poly.coeffs);
+        self.transformer.intt(&mut pout.coeffs);
+        pout.is_ntt = false;
+    }
+
     /// Applies Inverse NTT to the given polynomial.
-    /// Does nothing if the polynomial is not in NTT form.
-    pub fn intt(&self, poly: &mut BigPoly) {
+    pub fn intt_inplace(&self, poly: &mut BigPoly) {
         if !poly.is_ntt {
             panic!("Polynomial is not in NTT form.");
         }
@@ -332,7 +374,7 @@ impl BigRing {
     }
 
     /// Evaluates a multivariate polynomial at the given point, and returns the result.
-    pub fn evaluate_multivariate(&self, p: &BigMultiVariatePoly, xi: &[Integer]) -> Integer {
+    pub fn evaluate_multivariate(&self, p: &BigMultiVariatePoly, xi: &[&Integer]) -> Integer {
         let mut y = Integer::ZERO;
 
         let mut buf = Integer::ZERO;
@@ -352,7 +394,7 @@ impl BigRing {
     }
 
     /// Evaluates a multivariate polynomial at the given point, and returns the result.
-    pub fn evaluate_multivariate_poly(&self, p: &BigMultiVariatePoly, xi: &[BigPoly]) -> BigPoly {
+    pub fn evaluate_multivariate_poly(&self, p: &BigMultiVariatePoly, xi: &[&BigPoly]) -> BigPoly {
         let mut pout = self.new_ntt_poly();
         self.evaluate_multivariate_poly_assign(p, xi, &mut pout);
         return pout;
@@ -362,7 +404,7 @@ impl BigRing {
     pub fn evaluate_multivariate_poly_assign(
         &self,
         p: &BigMultiVariatePoly,
-        xi: &[BigPoly],
+        xi: &[&BigPoly],
         pout: &mut BigPoly,
     ) {
         if !pout.is_ntt {
@@ -404,7 +446,7 @@ impl BigRing {
     pub fn evaluate_poly_multivariate_poly(
         &self,
         p: &PolyMultiVariatePoly,
-        xi: &[BigPoly],
+        xi: &[&BigPoly],
     ) -> BigPoly {
         let mut pout = self.new_ntt_poly();
         self.evaluate_poly_multivariate_poly_assign(p, xi, &mut pout);
@@ -415,7 +457,7 @@ impl BigRing {
     pub fn evaluate_poly_multivariate_poly_assign(
         &self,
         p: &PolyMultiVariatePoly,
-        xi: &[BigPoly],
+        xi: &[&BigPoly],
         pout: &mut BigPoly,
     ) {
         if !pout.is_ntt {

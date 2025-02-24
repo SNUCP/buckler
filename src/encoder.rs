@@ -13,12 +13,13 @@ pub struct Encoder<'a> {
 
 impl<'a> Encoder<'a> {
     pub fn new(params: &'a Parameters) -> Self {
-        let root_2n = gen_root_of_unity(2 * params.bfv.n, &params.bfv.q);
+        let root_2n = gen_root_of_unity(2 * params.rlwe.n, &params.rlwe.q);
         let root_n = root_2n.clone() * &root_2n;
 
-        let transformer_n = CyclicTransformer::new_with_root(params.bfv.n, &params.bfv.q, &root_n);
+        let transformer_n =
+            CyclicTransformer::new_with_root(params.rlwe.n, &params.rlwe.q, &root_n);
         let transformer_2n =
-            CyclicTransformer::new_with_root(2 * params.bfv.n, &params.bfv.q, &root_2n);
+            CyclicTransformer::new_with_root(2 * params.rlwe.n, &params.rlwe.q, &root_2n);
 
         Encoder {
             params: params,
@@ -38,14 +39,14 @@ impl<'a> Encoder<'a> {
 
     /// Encodes w to w_out.
     pub fn encode_assign(&self, w: &[Integer], w_out: &mut BigPoly) {
-        for i in 0..self.params.bfv.n {
+        for i in 0..self.params.rlwe.n {
             w_out.coeffs[i].assign(&w[i]);
         }
 
         self.transformer_n
-            .intt(&mut w_out.coeffs[0..self.params.bfv.n]);
+            .intt(&mut w_out.coeffs[0..self.params.rlwe.n]);
 
-        for i in self.params.bfv.n..self.embedding_n {
+        for i in self.params.rlwe.n..self.embedding_n {
             w_out.coeffs[i] = Integer::ZERO;
         }
         w_out.is_ntt = false;
@@ -60,15 +61,17 @@ impl<'a> Encoder<'a> {
 
     /// Encodes w with randomization to w_out.
     pub fn encode_randomize_assign(&mut self, w: &[Integer], w_out: &mut BigPoly) {
-        for i in 0..self.params.bfv.n {
+        for i in 0..self.params.rlwe.n {
             w_out.coeffs[2 * i].assign(&w[i]);
-            w_out.coeffs[2 * i + 1] = self.uniform_sampler.sample_range_bigint(&self.params.bfv.q);
+            w_out.coeffs[2 * i + 1] = self
+                .uniform_sampler
+                .sample_range_bigint(&self.params.rlwe.q);
         }
 
         self.transformer_2n
-            .intt(&mut w_out.coeffs[0..2 * self.params.bfv.n]);
+            .intt(&mut w_out.coeffs[0..2 * self.params.rlwe.n]);
 
-        for i in 2 * self.params.bfv.n..self.embedding_n {
+        for i in 2 * self.params.rlwe.n..self.embedding_n {
             w_out.coeffs[i] = Integer::ZERO;
         }
         w_out.is_ntt = false;
